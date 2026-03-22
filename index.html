@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fluency Tracker</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="screen-login" class="screen active">
+        <h1>Fluency Tracker 🚀</h1>
+        <p>Acompanhe sua jornada até a fluência.</p>
+        <input type="email" id="email" placeholder="Seu e-mail" />
+        <input type="password" id="password" placeholder="Sua senha" />
+        <button onclick="login()">Entrar</button>
+        <button class="outline" onclick="register()">Criar Conta</button>
+        <p id="auth-error" class="error"></p>
+      </div>
+
+      <div id="screen-setup" class="screen">
+        <h2>Qual seu nível atual? <button class="help-circle" onclick="showHelp('levels')">?</button></h2>
+        <select id="level-select">
+          <option value="Zero">Zero (Iniciante)</option>
+          <option value="A1">A1 (Básico)</option>
+          <option value="A2">A2 (Pré-Intermediário)</option>
+          <option value="B1">B1 (Intermediário)</option>
+          <option value="B2">B2 (Avançado)</option>
+          <option value="C1">C1 (Fluente)</option>
+        </select>
+        <button onclick="saveInitialLevel()">Começar Jornada</button>
+      </div>
+
+      <div id="screen-home" class="screen">
+        <div class="header">
+          <span id="current-level-badge">Nível: --</span>
+          <div style="display: flex; align-items: center;">
+            <button class="help-circle" onclick="showHelp('app')">?</button>
+            <button class="logout-btn" onclick="logout()" style="margin-left: 10px;">Sair</button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" id="btn-timer" onclick="switchTab('timer')">Contagem</button>
+          <button class="tab-btn" id="btn-stats" onclick="switchTab('stats')">Desempenho</button>
+        </div>
+
+        <div id="tab-timer" class="tab-content active">
+          <h2>Rumo ao <span id="next-level-target" class="highlight">--</span></h2>
+          <div class="countdown-box">
+            <p>Faltam aproximadamente</p>
+            <h1 id="time-remaining">0h 00m</h1>
+          </div>
+          <div class="input-section">
+            <h3>Quanto tempo você estudou hoje?</h3>
+            <div class="inputs">
+              <input type="number" id="study-hours" placeholder="Horas" min="0" />
+              <input type="number" id="study-minutes" placeholder="Minutos" min="0" max="59" />
+            </div>
+            <button onclick="addStudyTime()">Registrar Tempo</button>
+          </div>
+        </div>
+
+        <div id="tab-stats" class="tab-content">
+          <h2>Seu Histórico</h2>
+          <div class="chart-container">
+            <canvas id="studyChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="help-modal" class="modal"x>
+        <div class="modal-content" >
+            <h3 id="help-title">Ajuda</h3>
+            <p id="help-text"></p>
+            <button onclick="closeHelp()">Entendi!</button>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
