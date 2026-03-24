@@ -6,10 +6,8 @@ O **Fluency Tracker** é uma aplicação web desenvolvida para estudantes de idi
 
 ## ✨ Funcionalidades
 
-- **Autenticação Real:** Login e cadastro seguro via Firebase Auth.
 - **Gráficos de Desempenho:** Visualização diária de minutos estudados usando Chart.js.
 - **Sistema de Níveis:** Cálculo automático de progresso (ex: A2 para B1).
-- **Interface Moderna:** Design responsivo com Glassmorphism e Dark Mode.
 - **Persistence:** Seus dados ficam salvos na nuvem (Firebase Realtime Database).
 
 ## 🛠️ Tecnologias Utilizadas
