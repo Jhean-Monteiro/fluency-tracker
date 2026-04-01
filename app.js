@@ -72,7 +72,7 @@ onAuthStateChanged(auth, async (user) => {
     if (snap.exists()) {
       userData = snap.val();
       if (!userData.history) userData.history = {};
-      if (!userData.startDate) userData.startDate = new Date().toISOString().split('T')[0];
+      if (!userData.startDate) userData.startDate = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
       updateDashboard();
       showScreen("screen-home");
     } else { showScreen("screen-setup"); }
@@ -81,7 +81,7 @@ onAuthStateChanged(auth, async (user) => {
 
 window.saveInitialLevel = async () => {
   const level = document.getElementById("level-select").value;
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
   userData = { level, minsRemaining: LEVEL_REQUIREMENTS[level].mins, history: {}, startDate: today };
   await set(ref(db, 'users/' + currentUser.uid), userData);
   updateDashboard();
@@ -97,8 +97,9 @@ window.addStudyTime = async () => {
   if (totalMins <= 0) return;
 
   userData.minsRemaining -= totalMins;
-  const today = new Date().toISOString().split('T')[0];
-  userData.history[today] = (userData.history[today] || 0) + totalMins;
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('pt-BR').split('/').reverse().join('-');
+  userData.history[dateStr] = (userData.history[dateStr] || 0) + totalMins;
 
   if (userData.minsRemaining <= 0) {
     const next = LEVEL_REQUIREMENTS[userData.level].next;
@@ -139,9 +140,10 @@ window.closeHelp = () => document.getElementById('help-modal').style.display = '
 
 // Períodos
 function getPeriodInfo(startDate) {
-  const start = new Date(startDate);
+  const start = new Date(startDate + 'T00:00:00-03:00');
   const now = new Date();
-  const diffTime = now - start;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffTime = today - start;
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
   const weekNum = Math.floor(diffDays / 7) + 1;
@@ -162,9 +164,9 @@ window.switchStatsPeriod = (period) => {
 
 function getDateRange(period) {
   const startDate = userData.startDate;
-  const start = new Date(startDate);
+  const start = new Date(startDate + 'T00:00:00-03:00');
   const now = new Date();
-  const today = new Date(now.toISOString().split('T')[0]);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   
   let labels = [], data = [], periodNum = 1, avgLabel = 'min/dia', avgValue = 0;
   const history = userData.history || {};
@@ -177,7 +179,7 @@ function getDateRange(period) {
       const d = new Date(today);
       d.setDate(d.getDate() - (6 - i));
       if (d < start) continue;
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = d.toLocaleDateString('pt-BR').split('/').reverse().join('-');
       labels.push(d.toLocaleDateString('pt-BR', { weekday: 'short' }));
       data.push(history[dateStr] || 0);
     }
@@ -194,7 +196,7 @@ function getDateRange(period) {
       const d = new Date(today);
       d.setDate(d.getDate() - (29 - i));
       if (d < start) continue;
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = d.toLocaleDateString('pt-BR').split('/').reverse().join('-');
       labels.push(String(d.getDate()));
       data.push(history[dateStr] || 0);
     }
@@ -214,7 +216,7 @@ function getDateRange(period) {
         const day = new Date(today);
         day.setDate(day.getDate() - (w * 7 + (6 - d)));
         if (day < start) continue;
-        const dateStr = day.toISOString().split('T')[0];
+        const dateStr = day.toLocaleDateString('pt-BR').split('/').reverse().join('-');
         weekMins += history[dateStr] || 0;
       }
       labels.push(`S${w + 1}`);
@@ -236,7 +238,7 @@ function getDateRange(period) {
       for (let d = 1; d <= daysInMonth; d++) {
         const day = new Date(monthDate.getFullYear(), monthDate.getMonth(), d);
         if (day > today) break;
-        const dateStr = day.toISOString().split('T')[0];
+        const dateStr = day.toLocaleDateString('pt-BR').split('/').reverse().join('-');
         monthMins += history[dateStr] || 0;
       }
       labels.push(monthDate.toLocaleDateString('pt-BR', { month: 'short' }));
@@ -275,8 +277,8 @@ function renderChart() {
   if (studyChartInstance) studyChartInstance.destroy();
   
   const maxVal = Math.max(...data) || 10;
-  const barPercentage = currentPeriod === 'month' ? 0.8 : (currentPeriod === 'week' ? 0.9 : 0.7);
-  const categoryPercentage = currentPeriod === 'month' ? 0.95 : 0.9;
+  const barPercentage = currentPeriod === 'week' ? 0.9 : (currentPeriod === 'month' ? 1.0 : 0.7);
+  const categoryPercentage = currentPeriod === 'week' ? 0.8 : (currentPeriod === 'month' ? 0.95 : 0.9);
   
   studyChartInstance = new Chart(ctx, {
     type: 'bar',
