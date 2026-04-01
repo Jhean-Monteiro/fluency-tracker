@@ -268,10 +268,19 @@ function renderChart() {
   
   const isTimeBased = currentPeriod === 'quarter' || currentPeriod === 'year';
   
+  const labelsMap = {
+    week: { avgLabel: 'Média diária', bestLabel: 'Melhor dia' },
+    month: { avgLabel: 'Média diária', bestLabel: 'Melhor dia' },
+    quarter: { avgLabel: 'Média semanal', bestLabel: 'Melhor semana' },
+    year: { avgLabel: 'Média mensal', bestLabel: 'Melhor mês' }
+  };
+  
   document.getElementById('period-label').innerText = periodLabel;
   document.getElementById('period-avg').innerText = `Média: ${avgValue} ${avgLabel}`;
   document.getElementById('summary-total').innerText = total;
   document.getElementById('summary-avg').innerText = `${avgValue} ${avgLabel}`;
+  document.querySelector('#stats-summary .summary-item:nth-child(2) .summary-label').innerText = labelsMap[currentPeriod].avgLabel;
+  document.querySelector('#stats-summary .summary-item:nth-child(3) .summary-label').innerText = labelsMap[currentPeriod].bestLabel;
   document.getElementById('summary-best').innerText = best > 0 ? `${bestLabel}: ${isTimeBased ? best + ' hrs' : best + ' min'}` : '--';
   
   if (studyChartInstance) studyChartInstance.destroy();
