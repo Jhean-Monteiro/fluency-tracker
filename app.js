@@ -28,9 +28,9 @@ const LEVEL_REQUIREMENTS = {
 
 const HELP_TEXTS = {
     levels: `• Zero/A1: Iniciante absoluto.
-• A2: Frases básicas e rotina.
-• B1/B2: Independência em conversas.
-• C1/C2: Fluência avançada/acadêmica.
+- A2: Frases básicas e rotina.
+- B1/B2: Independência em conversas.
+- C1/C2: Fluência avançada/acadêmica.
 
 O sistema calcula o tempo necessário para evoluir entre esses marcos.`,
     app: `Como usar:
@@ -50,7 +50,6 @@ function showScreen(id) {
   document.getElementById(id).classList.add("active");
 }
 
-// Auth Functions
 window.register = async () => {
   const email = document.getElementById("email").value;
   const pass = document.getElementById("password").value;
@@ -72,7 +71,7 @@ onAuthStateChanged(auth, async (user) => {
     if (snap.exists()) {
       userData = snap.val();
       if (!userData.history) userData.history = {};
-      if (!userData.startDate) userData.startDate = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
+      userData.startDate = '2026-01-01';
       updateDashboard();
       showScreen("screen-home");
     } else { showScreen("screen-setup"); }
@@ -81,14 +80,12 @@ onAuthStateChanged(auth, async (user) => {
 
 window.saveInitialLevel = async () => {
   const level = document.getElementById("level-select").value;
-  const today = new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-');
-  userData = { level, minsRemaining: LEVEL_REQUIREMENTS[level].mins, history: {}, startDate: today };
+  userData = { level, minsRemaining: LEVEL_REQUIREMENTS[level].mins, history: {}, startDate: '2026-01-01' };
   await set(ref(db, 'users/' + currentUser.uid), userData);
   updateDashboard();
   showScreen("screen-home");
 };
 
-// Lógica de Estudo
 window.addStudyTime = async () => {
   const hInput = document.getElementById('study-hours');
   const mInput = document.getElementById('study-minutes');
@@ -123,7 +120,6 @@ function updateDashboard() {
   document.getElementById('time-remaining').innerText = `${Math.floor(total/60)}h ${String(total%60).padStart(2, '0')}m`;
 }
 
-// UI Helpers
 window.switchTab = (tabId) => {
     document.querySelectorAll('.tab-content, .tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById(`tab-${tabId}`).classList.add('active');
@@ -138,20 +134,19 @@ window.showHelp = (type) => {
 
 window.closeHelp = () => document.getElementById('help-modal').style.display = 'none';
 
-// Períodos
 function getPeriodInfo(startDate) {
   const start = new Date(startDate + 'T00:00:00-03:00');
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const diffTime = today - start;
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  
+
   const weekNum = Math.floor(diffDays / 7) + 1;
   const monthNum = Math.floor(diffDays / 30) + 1;
-  const quarterNum = Math.floor(diffDays / 90) + 1;
+  const twelveWeekNum = Math.floor(diffDays / 84) + 1;
   const yearNum = Math.floor(diffDays / 365) + 1;
-  
-  return { weekNum, monthNum, quarterNum, yearNum, diffDays };
+
+  return { weekNum, monthNum, twelveWeekNum, yearNum, diffDays };
 }
 
 window.switchStatsPeriod = (period) => {
@@ -167,14 +162,14 @@ function getDateRange(period) {
   const start = new Date(startDate + 'T00:00:00-03:00');
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
+
   let labels = [], data = [], periodNum = 1, avgLabel = 'min/dia', avgValue = 0;
   const history = userData.history || {};
-  
+
   if (period === 'week') {
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     periodNum = Math.floor(diffDays / 7) + 1;
-    
+
     for (let i = 0; i < 7; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - (6 - i));
@@ -183,7 +178,7 @@ function getDateRange(period) {
       labels.push(d.toLocaleDateString('pt-BR', { weekday: 'short' }));
       data.push(history[dateStr] || 0);
     }
-    
+
     const totalMins = data.reduce((a, b) => a + b, 0);
     avgValue = Math.round(totalMins / 7);
     avgLabel = 'min/dia';
@@ -191,7 +186,7 @@ function getDateRange(period) {
   else if (period === 'month') {
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     periodNum = Math.floor(diffDays / 30) + 1;
-    
+
     for (let i = 0; i < 30; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - (29 - i));
@@ -200,36 +195,40 @@ function getDateRange(period) {
       labels.push(String(d.getDate()));
       data.push(history[dateStr] || 0);
     }
-    
+
     const totalMins = data.reduce((a, b) => a + b, 0);
     const daysWithData = data.filter(v => v > 0).length;
     avgValue = daysWithData > 0 ? Math.round(totalMins / Math.max(daysWithData, 1)) : 0;
     avgLabel = 'min/dia';
   }
   else if (period === 'quarter') {
+    // 12 Week Year: cada ciclo = 84 dias (12 semanas × 7)
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-    periodNum = Math.floor(diffDays / 90) + 1;
-    
-    for (let w = 12; w >= 0; w--) {
-  let weekMins = 0;
-  for (let d = 0; d < 7; d++) {
-    const day = new Date(today);
-    day.setDate(day.getDate() - (w * 7 + (6 - d)));
-    if (day < start) continue;
-    const dateStr = day.toLocaleDateString('pt-BR').split('/').reverse().join('-');
-    weekMins += history[dateStr] || 0;
-  }
-  labels.push(`S${13 - w}`);
-  data.push(Math.round(weekMins / 60 * 10) / 10);
+    periodNum = Math.floor(diffDays / 84) + 1;
+
+    // Início do ciclo atual
+    const cycleStartDay = (periodNum - 1) * 84;
+
+    for (let w = 0; w < 12; w++) {
+      let weekMins = 0;
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(start);
+        day.setDate(day.getDate() + cycleStartDay + (w * 7 + d));
+        if (day > today) break;
+        const dateStr = day.toLocaleDateString('pt-BR').split('/').reverse().join('-');
+        weekMins += history[dateStr] || 0;
       }
-    
-    avgValue = Math.round(data.reduce((a, b) => a + b, 0) / 13);
+      labels.push(`S${w + 1}`);
+      data.push(Math.round(weekMins / 60 * 10) / 10);
+    }
+
+    avgValue = Math.round(data.reduce((a, b) => a + b, 0) / 12);
     avgLabel = 'hrs/sem';
   }
   else if (period === 'year') {
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     periodNum = Math.floor(diffDays / 365) + 1;
-    
+
     for (let m = 0; m < 12; m++) {
       const monthDate = new Date(today.getFullYear(), today.getMonth() - (11 - m), 1);
       if (monthDate < start) { labels.push(''); data.push(0); continue; }
@@ -244,37 +243,37 @@ function getDateRange(period) {
       labels.push(monthDate.toLocaleDateString('pt-BR', { month: 'short' }));
       data.push(Math.round(monthMins / 60 * 10) / 10);
     }
-    
+
     avgValue = Math.round(data.reduce((a, b) => a + b, 0) / 12);
     avgLabel = 'hrs/mês';
   }
-  
-  const periodLabels = { week: 'Semana', month: 'Mês', quarter: 'Trimestre', year: 'Ano' };
-  const total = period === 'quarter' || period === 'year' 
+
+  const periodLabels = { week: 'Semana', month: 'Mês', quarter: '12WeekYear', year: 'Ano' };
+  const total = period === 'quarter' || period === 'year'
     ? data.reduce((a, b) => a + b, 0).toFixed(1) + ' hrs'
     : Math.round(data.reduce((a, b) => a + b, 0)) + ' min';
   const best = Math.max(...data);
   const bestIdx = data.indexOf(best);
   const bestLabel = labels[bestIdx] || '--';
-  
+
   return { labels, data, periodNum, periodLabel: `${periodLabels[period]} ${periodNum}`, avgLabel, avgValue, total, bestLabel, best };
 }
 
 function renderChart() {
   if (!userData) return;
-  
+
   const ctx = document.getElementById('studyChart').getContext('2d');
   const { labels, data, periodNum, periodLabel, avgLabel, avgValue, total, bestLabel, best } = getDateRange(currentPeriod);
-  
+
   const isTimeBased = currentPeriod === 'quarter' || currentPeriod === 'year';
-  
+
   const labelsMap = {
     week: { avgLabel: 'Média diária', bestLabel: 'Melhor dia' },
     month: { avgLabel: 'Média diária', bestLabel: 'Melhor dia' },
     quarter: { avgLabel: 'Média semanal', bestLabel: 'Melhor semana' },
     year: { avgLabel: 'Média mensal', bestLabel: 'Melhor mês' }
   };
-  
+
   document.getElementById('period-label').innerText = periodLabel;
   document.getElementById('period-avg').innerText = `Média: ${avgValue} ${avgLabel}`;
   document.getElementById('summary-total').innerText = total;
@@ -282,20 +281,20 @@ function renderChart() {
   document.querySelector('#stats-summary .summary-item:nth-child(2) .summary-label').innerText = labelsMap[currentPeriod].avgLabel;
   document.querySelector('#stats-summary .summary-item:nth-child(3) .summary-label').innerText = labelsMap[currentPeriod].bestLabel;
   document.getElementById('summary-best').innerText = best > 0 ? `${bestLabel}: ${isTimeBased ? best + ' hrs' : best + ' min'}` : '--';
-  
+
   if (studyChartInstance) studyChartInstance.destroy();
-  
+
   const maxVal = Math.max(...data) || 10;
   const barPercentage = currentPeriod === 'week' ? 0.9 : (currentPeriod === 'month' ? 1.0 : 0.7);
   const categoryPercentage = currentPeriod === 'week' ? 0.8 : (currentPeriod === 'month' ? 0.95 : 0.9);
-  
+
   studyChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: labels,
-      datasets: [{ 
-        label: isTimeBased ? 'Horas' : 'Minutos', 
-        data: data, 
+      datasets: [{
+        label: isTimeBased ? 'Horas' : 'Minutos',
+        data: data,
         backgroundColor: data.map((v, i) => v === best && best > 0 ? '#4CAF50' : 'rgba(76, 175, 80, 0.6)'),
         borderColor: '#4CAF50',
         borderWidth: 1,
@@ -308,16 +307,16 @@ function renderChart() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: { 
-        y: { 
-          beginAtZero: true, 
+      scales: {
+        y: {
+          beginAtZero: true,
           ticks: { color: '#94a3b8', callback: v => isTimeBased ? v + 'h' : v + 'm' },
           grid: { color: 'rgba(148, 163, 184, 0.1)' }
-        }, 
-        x: { 
+        },
+        x: {
           ticks: { color: '#94a3b8', font: { size: currentPeriod === 'month' ? 9 : 10 } },
           grid: { display: false }
-        } 
+        }
       }
     }
   });
