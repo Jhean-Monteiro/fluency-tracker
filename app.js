@@ -210,18 +210,18 @@ function getDateRange(period) {
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     periodNum = Math.floor(diffDays / 90) + 1;
     
-    for (let w = 0; w < 13; w++) {
-      let weekMins = 0;
-      for (let d = 0; d < 7; d++) {
-        const day = new Date(today);
-        day.setDate(day.getDate() - (w * 7 + (6 - d)));
-        if (day < start) continue;
-        const dateStr = day.toLocaleDateString('pt-BR').split('/').reverse().join('-');
-        weekMins += history[dateStr] || 0;
+    for (let w = 12; w >= 0; w--) {
+  let weekMins = 0;
+  for (let d = 0; d < 7; d++) {
+    const day = new Date(today);
+    day.setDate(day.getDate() - (w * 7 + (6 - d)));
+    if (day < start) continue;
+    const dateStr = day.toLocaleDateString('pt-BR').split('/').reverse().join('-');
+    weekMins += history[dateStr] || 0;
+  }
+  labels.push(`S${13 - w}`);
+  data.push(Math.round(weekMins / 60 * 10) / 10);
       }
-      labels.push(`S${w + 1}`);
-      data.push(Math.round(weekMins / 60 * 10) / 10);
-    }
     
     avgValue = Math.round(data.reduce((a, b) => a + b, 0) / 13);
     avgLabel = 'hrs/sem';
