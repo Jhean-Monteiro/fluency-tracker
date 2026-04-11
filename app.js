@@ -116,8 +116,18 @@ window.addStudyTime = async () => {
 function updateDashboard() {
   document.getElementById('current-level-badge').innerText = `Nível: ${userData.level}`;
   document.getElementById('next-level-target').innerText = LEVEL_REQUIREMENTS[userData.level].next;
+
   const total = userData.minsRemaining;
   document.getElementById('time-remaining').innerText = `${Math.floor(total/60)}h ${String(total%60).padStart(2, '0')}m`;
+
+  // Progress bar
+  const levelTotalMins = LEVEL_REQUIREMENTS[userData.level].mins;
+  const progress = levelTotalMins > 0
+    ? Math.max(0, Math.min(100, Math.round((levelTotalMins - userData.minsRemaining) / levelTotalMins * 100)))
+    : 100;
+
+  document.getElementById('level-progress-bar').style.width = progress + '%';
+  document.getElementById('progress-percent').innerText = `${progress}% concluído`;
 }
 
 window.switchTab = (tabId) => {
@@ -202,11 +212,8 @@ function getDateRange(period) {
     avgLabel = 'min/dia';
   }
   else if (period === 'quarter') {
-    // 12 Week Year: cada ciclo = 84 dias (12 semanas × 7)
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     periodNum = Math.floor(diffDays / 84) + 1;
-
-    // Início do ciclo atual
     const cycleStartDay = (periodNum - 1) * 84;
 
     for (let w = 0; w < 12; w++) {
