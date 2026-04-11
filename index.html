@@ -52,6 +52,14 @@
           <div class="countdown-box">
             <p>Faltam aproximadamente</p>
             <h1 id="time-remaining">0h 00m</h1>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="level-progress-bar"></div>
+            </div>
+            <div class="progress-info">
+              <span class="progress-end-label">Início</span>
+              <span id="progress-percent">0% concluído</span>
+              <span class="progress-end-label">Próximo nível</span>
+            </div>
           </div>
           <div class="input-section">
             <h3>Quanto tempo você estudou hoje?</h3>
@@ -100,8 +108,8 @@
       </div>
     </div>
 
-    <div id="help-modal" class="modal"x>
-        <div class="modal-content" >
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
             <h3 id="help-title">Ajuda</h3>
             <p id="help-text"></p>
             <button onclick="closeHelp()">Entendi!</button>
