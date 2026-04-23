@@ -216,29 +216,52 @@ function getDateRange(period) {
     periodNum = Math.floor(diffDays / 84) + 1;
     const cycleStartDay = (periodNum - 1) * 84;
 
+    // ─────────────────────────────────────────────────────────────
+    // Conta quantas semanas já começaram dentro deste ciclo de 12.
+    // Uma semana "começou" quando seu primeiro dia (segunda-feira
+    // da semana W) já passou ou é hoje.  Semanas futuras são
+    // ignoradas no cálculo da média para não diluir o resultado.
+    // ─────────────────────────────────────────────────────────────
+    let weeksStarted = 0;
+
     for (let w = 0; w < 12; w++) {
+      // Primeiro dia da semana W dentro do ciclo atual
+      const weekStart = new Date(start);
+      weekStart.setDate(weekStart.getDate() + cycleStartDay + (w * 7));
+
       let weekMins = 0;
       for (let d = 0; d < 7; d++) {
         const day = new Date(start);
         day.setDate(day.getDate() + cycleStartDay + (w * 7 + d));
-        if (day > today) break;
+        if (day > today) break; // dias futuros não contam
         const dateStr = day.toLocaleDateString('pt-BR').split('/').reverse().join('-');
         weekMins += history[dateStr] || 0;
       }
+
       labels.push(`S${w + 1}`);
       data.push(Math.round(weekMins / 60 * 10) / 10);
+
+      // Só incrementa o contador se a semana já começou
+      if (weekStart <= today) weeksStarted++;
     }
 
-    avgValue = Math.round(data.reduce((a, b) => a + b, 0) / 12);
+    // Divide apenas pelas semanas que já começaram (≥ 1 para evitar NaN)
+    avgValue = weeksStarted > 0
+      ? Math.round(data.reduce((a, b) => a + b, 0) / weeksStarted * 10) / 10
+      : 0;
     avgLabel = 'hrs/sem';
   }
   else if (period === 'year') {
     const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
     periodNum = Math.floor(diffDays / 365) + 1;
 
+    // Conta quantos meses já começaram para não diluir a média
+    let monthsStarted = 0;
+
     for (let m = 0; m < 12; m++) {
       const monthDate = new Date(today.getFullYear(), today.getMonth() - (11 - m), 1);
       if (monthDate < start) { labels.push(''); data.push(0); continue; }
+
       const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
       let monthMins = 0;
       for (let d = 1; d <= daysInMonth; d++) {
@@ -249,9 +272,15 @@ function getDateRange(period) {
       }
       labels.push(monthDate.toLocaleDateString('pt-BR', { month: 'short' }));
       data.push(Math.round(monthMins / 60 * 10) / 10);
+
+      // Só conta o mês se já começou (primeiro dia <= hoje)
+      if (monthDate <= today) monthsStarted++;
     }
 
-    avgValue = Math.round(data.reduce((a, b) => a + b, 0) / 12);
+    // Divide apenas pelos meses iniciados
+    avgValue = monthsStarted > 0
+      ? Math.round(data.reduce((a, b) => a + b, 0) / monthsStarted * 10) / 10
+      : 0;
     avgLabel = 'hrs/mês';
   }
 
